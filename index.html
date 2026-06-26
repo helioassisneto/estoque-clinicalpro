@@ -417,8 +417,8 @@ footer span{color:var(--teal);font-weight:600;}
 // CONFIGURAÇÃO
 // ============================================================
 const SHEET_ID  = '1tWD76dt68fWpmll3-b_G56qIz770rsW42M3HhyzjNvk';
-const SHEET_ABA = 'Estoque_Atual';          // nome da aba com os dados consolidados
-const API_KEY   = 'AIzaSyAdJTziF-dUrnGVeIZYVwdFNCWrsVdu8Gs'; // Google Sheets API Key (leitura pública)
+const SHEET_ABA = 'Estoque_Atual';
+const API_KEY   = 'AIzaSyAdJTziF-dUrnGVeIZYVwdFNCWrsVdu8Gs';
 let WEB_APP_URL = localStorage.getItem('webAppUrl') || 'https://script.google.com/macros/s/AKfycbwK8RoE8A_RPasQtNF-hAyzJ489Z50c-kF-HYzVZZJwX8k5SANVWFfyPUOP4lIWBOCdug/exec';
 // ============================================================
 
@@ -440,8 +440,8 @@ function mostrarSecao(id, btn) {
   document.getElementById('secao-' + id).classList.add('ativa');
   btn.classList.add('ativo');
   if (id === 'graficos') { carregarHistorico(); }
-  if (id === 'relatorio') { popularMeses(); }
-  if (id === 'consolidado') { renderConsolidado(); }
+  if (id === 'relatorio') { popularMeses(); carregarHistorico(true).then(() => renderRelatorio()); }
+  if (id === 'consolidado') { carregarHistorico(true).then(() => renderConsolidado()); }
 }
 
 // ============================================================
@@ -622,8 +622,8 @@ function salvarWebAppUrl() {
 // ============================================================
 // HISTÓRICO
 // ============================================================
-async function carregarHistorico() {
-  showToast('Carregando histórico...','info');
+async function carregarHistorico(silencioso=false) {
+  if(!silencioso) showToast('Carregando histórico...','info');
   const url = 'https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/Histórico!A2:L5000?key='+API_KEY;
   try {
     const res = await fetch(url);
@@ -635,9 +635,9 @@ async function carregarHistorico() {
       responsavel:r[8]||'', obs:r[9]||'', qtdAntes:parseInt(r[10])||0, qtdDepois:parseInt(r[11])||0
     })).filter(d=>d.item);
     renderGraficos();
-    showToast('Histórico carregado!','sucesso');
+    if(!silencioso) showToast('Histórico carregado!','sucesso');
   } catch(e) {
-    showToast('Erro ao carregar histórico.','erro');
+    if(!silencioso) showToast('Erro ao carregar histórico.','erro');
   }
 }
 
