@@ -687,9 +687,18 @@ function ultimos6Meses() {
   for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);meses.push(d.toLocaleDateString('pt-BR',{month:'short',year:'numeric'}));}
   return meses;
 }
+function parseData(dataStr) {
+  if(!dataStr) return null;
+  // Tenta formato brasileiro DD/MM/YYYY HH:MM:SS
+  const brMatch = String(dataStr).match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if(brMatch) return new Date(parseInt(brMatch[3]), parseInt(brMatch[2])-1, parseInt(brMatch[1]));
+  // Tenta formato ISO ou americano
+  const d = new Date(dataStr);
+  return isNaN(d.getTime()) ? null : d;
+}
 function mesAno(dataStr) {
   if(!dataStr)return'';
-  try{const d=new Date(dataStr);return d.toLocaleDateString('pt-BR',{month:'short',year:'numeric'});}catch{return'';}
+  try{const d=parseData(dataStr);if(!d)return'';return d.toLocaleDateString('pt-BR',{month:'short',year:'numeric'});}catch{return'';}
 }
 
 // ============================================================
@@ -717,7 +726,8 @@ function renderRelatorio() {
   const [ano,m] = mes.split('-');
   let dados = dadosHistorico.filter(d=>{
     if(!d.dataHora) return false;
-    const dt = new Date(d.dataHora);
+    const dt = parseData(d.dataHora);
+    if(!dt) return false;
     return dt.getFullYear()===parseInt(ano)&&dt.getMonth()+1===parseInt(m)&&
            (uni==='todas'||d.unidade===uni)&&(tipo==='todos'||d.tipo===tipo);
   });
@@ -733,8 +743,8 @@ function renderRelatorio() {
   if(!dados.length){document.getElementById('conteudoRelatorio').innerHTML='<div class="estado-vazio"><div class="icone">📋</div><h3>Nenhuma movimentação encontrada</h3></div>';return;}
   let h='<table class="tabela-rel"><thead><tr><th>Data/Hora</th><th>Unidade</th><th>Item</th><th>Categoria</th><th>Tipo</th><th>Qtd</th><th>Preço Unit.</th><th>Total</th><th>Responsável</th></tr></thead><tbody>';
   for(const d of dados){
-    const dt=new Date(d.dataHora);
-    h+='<tr><td>'+dt.toLocaleDateString('pt-BR')+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+'</td><td>'+d.unidade+'</td><td>'+d.item+'</td><td><span class="categoria-badge '+(CAT_CLASSES[d.categoria]||'')+'">'+d.categoria+'</span></td><td><span class="tag-'+(d.tipo==='Entrada'?'entrada':'saida')+'">'+d.tipo+'</span></td><td class="qtd '+(d.tipo==='Entrada'?'ok':'critico')+'">'+d.qtd+'</td><td class="preco">'+formatPreco(d.preco)+'</td><td class="preco">'+formatPreco(d.qtd*d.preco)+'</td><td>'+d.responsavel+'</td></tr>';
+    const dt=parseData(d.dataHora);
+    h+='<tr><td>'+(dt?dt.toLocaleDateString('pt-BR')+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):d.dataHora)+'</td><td>'+d.unidade+'</td><td>'+d.item+'</td><td><span class="categoria-badge '+(CAT_CLASSES[d.categoria]||'')+'">'+d.categoria+'</span></td><td><span class="tag-'+(d.tipo==='Entrada'?'entrada':'saida')+'">'+d.tipo+'</span></td><td class="qtd '+(d.tipo==='Entrada'?'ok':'critico')+'">'+d.qtd+'</td><td class="preco">'+formatPreco(d.preco)+'</td><td class="preco">'+formatPreco(d.qtd*d.preco)+'</td><td>'+d.responsavel+'</td></tr>';
   }
   h+='</tbody></table>';
   document.getElementById('conteudoRelatorio').innerHTML=h;
@@ -764,7 +774,7 @@ function renderConsolidado() {
 
 function mesAnoSort(dataStr){
   if(!dataStr)return'';
-  try{const d=new Date(dataStr);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}catch{return'';}
+  try{const d=parseData(dataStr);if(!d)return'';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}catch{return'';}
 }
 function mesLabel(ym){
   if(!ym)return'';
